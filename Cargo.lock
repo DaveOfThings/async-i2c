@@ -154,12 +154,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "emb-i2c-exp"
+name = "emb-esp-exp"
 version = "0.1.0"
 dependencies = [
  "critical-section",
  "embassy-executor",
  "embassy-time",
+ "embedded-hal 1.0.0",
  "esp-alloc",
  "esp-backtrace",
  "esp-bootloader-esp-idf",

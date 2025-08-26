@@ -1,11 +1,11 @@
 [package]
 edition      = "2021"
-name         = "emb-i2c-exp"
+name         = "emb-esp-exp"
 rust-version = "1.86"
 version      = "0.1.0"
 
 [[bin]]
-name = "emb-i2c-exp"
+name = "emb-esp-exp"
 path = "./src/bin/main.rs"
 
 [dependencies]
@@ -25,6 +25,7 @@ esp-backtrace = { version = "0.17.0", features = [
 esp-hal-embassy = { version = "0.9.0", features = ["esp32c3"] }
 esp-println = { version = "0.15.0", features = ["esp32c3"] }
 static_cell = "2.1.1"
+embedded-hal = "1.0.0"
 
 
 [profile.dev]
