@@ -20,6 +20,29 @@ use esp_hal::{
 use emb_esp_exp::icm42670p::Icm42670P;
 use esp_println::println;
 
+use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
+use embassy_sync::mutex::Mutex;
+use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+use static_cell::StaticCell;
+
+static I2C_BUS: StaticCell<Mutex<NoopRawMutex, I2c<Async>>> = StaticCell::new();
+
+/* -----------------------------------------------------------------
+
+let i2c_bus = Mutex::new(i2c);
+let i2c_bus = I2C_BUS.init(i2c_bus);
+
+// Device 1, using embedded-hal-async compatible driver for QMC5883L compass
+let i2c_dev1 = I2cDevice::new(i2c_bus);
+let compass = QMC5883L::new(i2c_dev1).await.unwrap();
+
+// Device 2, using embedded-hal-async compatible driver for Mpu6050 accelerometer
+let i2c_dev2 = I2cDevice::new(i2c_bus);
+let mpu = Mpu6050::new(i2c_dev2);
+--------------------------------------------------------
+*/
+
+
 extern crate alloc;
 
 // This creates a default app-descriptor required by the esp-idf bootloader.
@@ -29,7 +52,7 @@ esp_bootloader_esp_idf::esp_app_desc!();
 // TODO-DW : Create I2C Bus in a way where two devices can be accessed.
 
 #[embassy_executor::task]
-async fn imu_task(mut imu: Icm42670P<I2c<'static, Async>>) -> ! {
+async fn imu_task(mut imu: Icm42670P<I2cDevice<'static, NoopRawMutex, I2c<'static, Async>>>) -> ! {
     loop {
         imu.task().await;
     }
@@ -52,8 +75,8 @@ async fn main(spawner: Spawner) -> ! {
 	let mut led_state = false;
     led.set_level(led_state.into());
 
-    // Create IMU
-    const IMU_ADDR: u8 = 0x68;
+
+    // Create and configure I2C Peripheral
     let bus = I2c::new(
         peripherals.I2C0,
         Config::default().with_frequency(Rate::from_khz(100)))
@@ -62,7 +85,13 @@ async fn main(spawner: Spawner) -> ! {
         .with_scl(peripherals.GPIO8)
         .into_async();
 
-    let imu = Icm42670P::new(bus, IMU_ADDR);
+    // create I2C Bus with shared access, protected by mutex
+    let i2c_bus = I2C_BUS.init(Mutex::new(bus));
+
+    // Create IMU
+    const IMU_ADDR: u8 = 0x68;
+    let imu = 
+        Icm42670P::new(I2cDevice::new(i2c_bus), IMU_ADDR);
     if !spawner.spawn(imu_task(imu)).is_ok() {
         println!("Spawn of IMU task failed!");
     }
