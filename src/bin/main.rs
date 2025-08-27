@@ -12,6 +12,7 @@ use esp_backtrace as _;
 use esp_hal::clock::CpuClock;
 use esp_hal::time::Rate;
 use esp_hal::timer::systimer::SystemTimer;
+use esp_hal::Async;
 use esp_hal::{
     gpio::{Level, Output, OutputConfig}, 
     i2c::master::I2c, i2c::master::Config,
@@ -28,7 +29,7 @@ esp_bootloader_esp_idf::esp_app_desc!();
 // TODO-DW : Create I2C Bus in a way where two devices can be accessed.
 
 #[embassy_executor::task]
-async fn imu_task(mut imu: Icm42670P<'static>) -> ! {
+async fn imu_task(mut imu: Icm42670P<I2c<'static, Async>>) -> ! {
     loop {
         imu.task().await;
     }
