@@ -30,6 +30,7 @@ embedded-hal-async = "1.0.0"
 embedded-hal-bus = "0.3.0"
 embassy-embedded-hal = "0.5.0"
 embassy-sync = "0.7.2"
+fixed = "1.29.0"
 
 
 [profile.dev]

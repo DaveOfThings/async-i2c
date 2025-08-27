@@ -3,13 +3,15 @@ use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
 use esp_println::println;
 use embedded_hal_async::i2c::I2c;
+use fixed::types::extra::U14;
+use fixed::FixedI16;
+type F16U14 = FixedI16<U14>;
 
 
 pub struct Icm42670P<T: I2c> {
     bus: T,
     addr: u8,
 }
-
 
 // Registers of IMU
 const PWR_MGMT0 : u8 = 0x1F;
@@ -61,7 +63,11 @@ impl<T: I2c> Icm42670P<T> {
             let mut data_response = [0; 14];
 
             let _ = self.bus.write_read(self.addr, &data_query, &mut data_response).await;
-            println!("AX = {:02X}{:02X}", data_response[2], data_response[3]);
+            let ax: F16U14 = F16U14::from_be_bytes(data_response[2..4].try_into().unwrap());
+            let ay: F16U14 = F16U14::from_be_bytes(data_response[4..6].try_into().unwrap());
+            let az: F16U14 = F16U14::from_be_bytes(data_response[6..8].try_into().unwrap());
+
+            println!("Acc = {ax:7.4}, {ay:7.4}, {az:7.4}");
         }
 
         // Read Raw Accel, Raw Gyro.

@@ -49,8 +49,6 @@ extern crate alloc;
 // For more information see: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/app_image_format.html#application-description>
 esp_bootloader_esp_idf::esp_app_desc!();
 
-// TODO-DW : Create I2C Bus in a way where two devices can be accessed.
-
 #[embassy_executor::task]
 async fn imu_task(mut imu: Icm42670P<I2cDevice<'static, NoopRawMutex, I2c<'static, Async>>>) -> ! {
     loop {
