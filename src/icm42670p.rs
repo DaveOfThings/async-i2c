@@ -23,16 +23,10 @@ impl<T: I2c> Icm42670P<T> {
     }
 
     async fn setup(&mut self) {
-        // Configure IMU and read it
-        // Set 6-Axis low noise mode (turn on acccel and gyro) 0x1F PWR_MGMT
-        // Configure Accel 0, Accel 1
-        // Configure Gyro 0, Gyro 1
-        // FIFO Config?
-        // Int Source?
 
         let config_buf = [
             PWR_MGMT0,   // Start writing to PWR_MGMT0 reg
-            0x0F,   // PWR_MGMT0: RC Osc off, Gyro and Accel in Low Noise Mode
+            0x0F,   // PWR_MGMT0: RC Osc off, Gyro and Accel on in Low Noise Mode
             0x69,   // GYRO_CONFIG0: +/-250 dps, Gyro ODR: 100Hz 
             0x69,   // ACCEL_CONFIG0: +/- 2g, Accel ODR: 100Hz
             0x60,   // TEMP_CONFIG0: LPF: 4 Hz
@@ -59,6 +53,7 @@ impl<T: I2c> Icm42670P<T> {
         let _ = self.bus.write_read(self.addr, &ready_query, &mut ready).await; 
         if (ready[0] & 1) != 0 {
 
+            // Read Raw Accel, Raw Gyro.
             let data_query = [0x09];
             let mut data_response = [0; 14];
 
@@ -67,10 +62,9 @@ impl<T: I2c> Icm42670P<T> {
             let ay: F16U14 = F16U14::from_be_bytes(data_response[4..6].try_into().unwrap());
             let az: F16U14 = F16U14::from_be_bytes(data_response[6..8].try_into().unwrap());
 
+            // Print results
             println!("Acc = {ax:7.4}, {ay:7.4}, {az:7.4}");
         }
-
-        // Read Raw Accel, Raw Gyro.
     }
 
     pub async fn task(&mut self) {
