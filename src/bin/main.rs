@@ -27,22 +27,6 @@ use static_cell::StaticCell;
 
 static I2C_BUS: StaticCell<Mutex<NoopRawMutex, I2c<Async>>> = StaticCell::new();
 
-/* -----------------------------------------------------------------
-
-let i2c_bus = Mutex::new(i2c);
-let i2c_bus = I2C_BUS.init(i2c_bus);
-
-// Device 1, using embedded-hal-async compatible driver for QMC5883L compass
-let i2c_dev1 = I2cDevice::new(i2c_bus);
-let compass = QMC5883L::new(i2c_dev1).await.unwrap();
-
-// Device 2, using embedded-hal-async compatible driver for Mpu6050 accelerometer
-let i2c_dev2 = I2cDevice::new(i2c_bus);
-let mpu = Mpu6050::new(i2c_dev2);
---------------------------------------------------------
-*/
-
-
 extern crate alloc;
 
 // This creates a default app-descriptor required by the esp-idf bootloader.
@@ -77,7 +61,7 @@ async fn main(spawner: Spawner) -> ! {
     // Create and configure I2C Peripheral
     let bus = I2c::new(
         peripherals.I2C0,
-        Config::default().with_frequency(Rate::from_khz(100)))
+        Config::default().with_frequency(Rate::from_khz(400)))
         .unwrap()
         .with_sda(peripherals.GPIO10)
         .with_scl(peripherals.GPIO8)
@@ -90,6 +74,7 @@ async fn main(spawner: Spawner) -> ! {
     const IMU_ADDR: u8 = 0x68;
     let imu = 
         Icm42670P::new(I2cDevice::new(i2c_bus), IMU_ADDR);
+
     if !spawner.spawn(imu_task(imu)).is_ok() {
         println!("Spawn of IMU task failed!");
     }
