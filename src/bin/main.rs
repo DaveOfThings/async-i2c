@@ -18,6 +18,7 @@ use esp_hal::{
     i2c::master::I2c, i2c::master::Config,
 };
 use emb_esp_exp::icm42670p::Icm42670P;
+use emb_esp_exp::shtc3::Shtc3;
 use esp_println::println;
 
 use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
@@ -37,6 +38,13 @@ esp_bootloader_esp_idf::esp_app_desc!();
 async fn imu_task(mut imu: Icm42670P<I2cDevice<'static, NoopRawMutex, I2c<'static, Async>>>) -> ! {
     loop {
         imu.task().await;
+    }
+}
+
+#[embassy_executor::task]
+async fn th_task(mut th: Shtc3<I2cDevice<'static, NoopRawMutex, I2c<'static, Async>>>) -> ! {
+    loop {
+        th.task().await;
     }
 }
 
@@ -77,6 +85,13 @@ async fn main(spawner: Spawner) -> ! {
 
     if !spawner.spawn(imu_task(imu)).is_ok() {
         println!("Spawn of IMU task failed!");
+    }
+
+    // create Temp, RH sensor
+    const TH_ADDR: u8 = 0x70;
+    let th = Shtc3::new(I2cDevice::new(i2c_bus), TH_ADDR);
+    if !spawner.spawn(th_task(th)).is_ok() {
+        println!("Spawn of Temp/RH sensor failed!");
     }
 
     loop {
